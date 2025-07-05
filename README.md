@@ -18,5 +18,3 @@ Compiler: MPLAB / XC8
 
 Simulation: Proteus Design Suite
 
-Purpose
-These projects are designed for learning and demonstrating microcontroller-based hardware interfacing concepts using the PIC16F877A. They are useful for students, hobbyists, and anyone interested in embedded systems development.
