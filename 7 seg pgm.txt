@@ -1,0 +1,31 @@
+#include<pic.h>
+#define Segment_ON 0
+#define Segment_OFF 1
+void delay()
+{
+int i;
+for(i=0;i<=10000;i++);
+}
+void main()
+{
+int a[10]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};
+TRISB=0X00;
+TRISC=0X00;
+PORTB=0X00;
+PORTC=0X00;
+int num;
+int n,m;
+while(1){
+for(num=0;num<=98;num++)
+{
+n=num/10;
+m=num%10;
+RC0=Segment_ON;RC1=Segment_OFF;
+PORTB=a[n];
+delay();
+RC1=Segment_ON;RC0=Segment_OFF;
+PORTB=a[m];
+delay();
+}
+}
+}

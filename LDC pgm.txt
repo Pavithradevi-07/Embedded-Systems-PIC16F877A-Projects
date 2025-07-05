@@ -1,0 +1,64 @@
+#include<pic.h>
+
+#define rs RC0
+#define rw RC1
+#define en RC2
+#define delay for(j=0;j<1000;j++)
+
+int j;
+
+void lcd_init();
+void cmd(char a);
+void dat(char b);
+void show(char *s);
+
+void main()
+{
+    unsigned int i;
+    TRISB=0x00;TRISC=0X00;
+    lcd_init();
+    show("pavithra");
+    while(1) {
+        delay;
+        cmd(0x8A);
+        delay; 
+        cmd(0x18);
+     
+        
+    }   
+}
+
+void lcd_init()
+{
+    cmd(0x38);
+    cmd(0x0c);
+    cmd(0x06);
+    cmd(0x80);
+}
+
+void cmd(unsigned char a)
+{
+    PORTB=a;
+    rs=0;
+    rw=0;
+    en=1;
+    delay;
+    en=0;
+}
+
+void dat(unsigned char b)
+{
+    PORTB=b;
+    rs=1;
+    rw=0;
+    en=1;
+    delay;
+    en=0;
+}
+
+void show(char *s)
+{
+    while(*s) {
+        dat(*s++);
+    }
+}

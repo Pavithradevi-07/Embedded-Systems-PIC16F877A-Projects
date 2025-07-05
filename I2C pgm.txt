@@ -1,0 +1,151 @@
+#include <pic.h>
+
+// LCD Control Pins
+#define RS RC0
+#define RW RC1
+#define EN RC2
+
+// Function Prototypes
+void delay();
+void lcd_command(unsigned char command);
+void lcd_data(unsigned char data);
+void lcd_show(unsigned char *s);
+void lcd_initialize();
+
+void I2C_Start();
+void I2C_Stop();
+void I2C_Write(char data);
+void I2C_Restart();
+unsigned char I2C_Read(unsigned char ack);
+
+// Delay function
+void delay() {
+    int i;
+    for (i = 0; i < 30000; i++);
+}
+
+// LCD Functions
+void lcd_command(unsigned char command) {
+    PORTB = command;
+    RS = 0;
+    RW = 0;
+    EN = 1;
+    delay();
+    EN = 0;
+}
+
+void lcd_data(unsigned char data) {
+    PORTB = data;
+    RS = 1;
+    RW = 0;
+    EN = 1;
+    delay();
+    EN = 0;
+}
+
+void lcd_show(unsigned char *s) {
+    while (*s) {
+        lcd_data(*s++);
+    }
+}
+
+void lcd_initialize() {
+    lcd_command(0x38);  // 8-bit, 2-line
+    lcd_command(0x06);  // Increment cursor
+    lcd_command(0x0C);  // Display ON, Cursor OFF
+    lcd_command(0x01);  // Clear display
+    delay();
+}
+
+// I2C Functions
+void I2C_Start() {
+    SEN = 1;
+    while (!SSPIF);
+    SSPIF = 0;
+}
+
+void I2C_Stop() {
+    PEN = 1;
+    while (!SSPIF);
+    SSPIF = 0;
+}
+
+void I2C_Write(char data) {
+    SSPBUF = data;
+    while (!SSPIF);
+    SSPIF = 0;
+}
+
+void I2C_Restart() {
+    RSEN = 1;
+    while (!SSPIF);
+    SSPIF = 0;
+}
+
+unsigned char I2C_Read(unsigned char ack) {
+    unsigned char value;
+    RCEN = 1;
+    while (!SSPIF);
+    SSPIF = 0;
+    value = SSPBUF;
+
+    ACKDT = ack;  // 0 = ACK, 1 = NACK
+    ACKEN = 1;
+    while (!SSPIF);
+    SSPIF = 0;
+
+    return value;
+}
+
+// Main Function
+void main() {
+    TRISC0 = 0x00;  // Control lines as output
+TRISC1 = 0x00;
+TRISC2 = 0x00;
+    TRISB = 0x00;
+PORTB=0X00;  // LCD data as output
+
+    lcd_initialize();
+
+    // Initialize I2C Master
+    SSPCON = 0x28;   // Master mode, enable SSP
+    SSPADD = 0x3F;   // 100kHz @ 4MHz
+
+    // Write 'a' to EEPROM (24CXX type)
+    I2C_Start();
+    I2C_Write(0xA0);  // EEPROM Write address
+    I2C_Write(0x00);  // Address High Byte
+    I2C_Write(0x00);  // Address Low Byte
+    I2C_Write('A');   // Data to write
+    I2C_Stop();
+    delay();I2C_Start();
+    I2C_Write(0xA0);  // EEPROM Write address
+    I2C_Write(0x00);  // Address High Byte
+    I2C_Write(0x01);  // Address Low Byte
+    I2C_Write('P');   // Data to write
+    I2C_Stop();
+   
+
+    while (1) {
+        I2C_Start();
+        I2C_Write(0xA0);  // EEPROM Write address
+        I2C_Write(0x00);  // Address High Byte
+        I2C_Write(0x00);  // Address Low Byte
+        I2C_Restart();
+        I2C_Write(0xA1);  // EEPROM Read address
+
+        unsigned char a = I2C_Read(0);  // Read with ACK
+        unsigned char b = I2C_Read(1);  // Read with NACk  
+        I2C_Stop();
+
+        lcd_command(0x80);     // 1st line, 1st position
+        lcd_show("PAVITHRADEVI");
+
+        lcd_command(0xC0);     // 2nd line, 1st position
+        lcd_data(a);
+        lcd_data(b);
+        
+
+        delay();
+    }
+}
